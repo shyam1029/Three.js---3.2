@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Car Configurator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0066ff;
+            --secondary-color: #1a1a1a;
+            --accent-color: #00d4ff;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --background-dark: #0d0d0d;
+            --background-card: rgba(20, 20, 20, 0.9);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--background-dark);
+            overflow: hidden;
+            color: var(--text-primary);
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            outline: none;
+        }
+
+        /* Loading Screen Styles */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-content {
+            text-align: center;
+            max-width: 400px;
+            padding: 0 20px;
+        }
+
+        .loading-logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 2rem;
+            animation: pulse 2s infinite;
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        .progress-text {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        /* Custom GUI Styles */
+        .dg {
+            color: var(--text-primary) !important;
+            text-shadow: none !important;
+        }
+
+        .dg.main {
+            position: fixed !important;
+            top: 20px !important;
+            right: 20px !important;
+            z-index: 100 !important;
+            background: var(--glass-bg) !important;
+            backdrop-filter: blur(20px) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+            overflow: hidden !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+
+        .dg .close-button {
+            background: var(--primary-color) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 8px !important;
+            font-weight: 500 !important;
+        }
+
+        .dg .folder {
+            border: none !important;
+            background: transparent !important;
+        }
+
+        .dg .title {
+            background: var(--glass-bg) !important;
+            color: var(--text-primary) !important;
+            font-weight: 600 !important;
+            border-bottom: 1px solid var(--border-color) !important;
+            padding: 12px !important;
+            font-size: 0.9rem !important;
+        }
+
+        .dg li:not(.folder) {
+            background: transparent !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+            padding: 8px 12px !important;
+        }
+
+        .dg li:hover {
+            background: rgba(255, 255, 255, 0.05) !important;
+        }
+
+        .dg .property-name {
+            color: var(--text-primary) !important;
+            font-weight: 500 !important;
+        }
+
+        .dg input[type="text"] {
+            background: var(--background-card) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-primary) !important;
+            border-radius: 6px !important;
+            padding: 4px 8px !important;
+        }
+
+        .dg .slider {
+            background: var(--border-color) !important;
+            border-radius: 3px !important;
+        }
+
+        .dg .slider-fg {
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color)) !important;
+            border-radius: 3px !important;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+            padding: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-btn {
+            padding: 12px 24px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 102, 255, 0.3);
+        }
+
+        .control-btn.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        /* Stats Panel */
+        .stats-panel {
+            position: fixed !important;
+            top: 20px !important;
+            left: 20px !important;
+            background: var(--glass-bg) !important;
+            backdrop-filter: blur(20px) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 12px !important;
+            padding: 15px !important;
+            color: var(--text-primary) !important;
+            font-family: 'Inter', sans-serif !important;
+            font-size: 0.8rem !important;
+        }
+
+        /* Camera Controls */
+        .camera-controls {
+            position: fixed;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .camera-btn {
+            width: 50px;
+            height: 50px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+        }
+
+        .camera-btn:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            transform: scale(1.1);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dg.main {
+                top: 10px !important;
+                right: 10px !important;
+                width: calc(100vw - 20px) !important;
+                max-width: 300px !important;
+            }
+
+            .control-panel {
+                bottom: 20px;
+                padding: 15px;
+                gap: 10px;
+            }
+
+            .control-btn {
+                padding: 10px 16px;
+                font-size: 0.9rem;
+            }
+
+            .camera-controls {
+                left: 10px;
+            }
+
+            .camera-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 1rem;
+            }
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* Color Picker Enhancement */
+        .dg input[type="color"] {
+            width: 40px !important;
+            height: 25px !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 6px !important;
+            background: transparent !important;
+            cursor: pointer !important;
+        }
+
+        /* Notification System */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 15px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            z-index: 1001;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-content">
+            <div class="loading-logo">LUXE CARS</div>
+            <div class="loading-text" id="loadingText">Initializing experience...</div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="progress-text" id="progressText">0%</div>
+        </div>
+    </div>
+
+    <!-- Main Canvas -->
+    <canvas class="webgl" id="canvas"></canvas>
+
+    <!-- Control Panel -->
+    <div class="control-panel fade-in-up">
+        <button class="control-btn active" id="rotateBtn">
+            <span>🔄</span> Auto Rotate
+        </button>
+        <button class="control-btn" id="resetBtn">
+            <span>🎯</span> Reset View
+        </button>
+        <button class="control-btn" id="screenshotBtn">
+            <span>📸</span> Screenshot
+        </button>
+    </div>
+
+    <!-- Camera Controls -->
+    <div class="camera-controls fade-in-up">
+        <button class="camera-btn" id="frontView" title="Front View">🚗</button>
+        <button class="camera-btn" id="sideView" title="Side View">↔️</button>
+        <button class="camera-btn" id="rearView" title="Rear View">🔄</button>
+        <button class="camera-btn" id="topView" title="Top View">⬆️</button>
+    </div>
+
+    <!-- Scripts -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@v0.172.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@v0.172.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>
