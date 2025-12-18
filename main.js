@@ -419,7 +419,7 @@ const carConfig = {
     autoRotate: true,
     
     // Post-processing
-    bloomStrength: 0.4,
+    bloomStrength: 0.1,
     bloomRadius: 0.6,
     bloomThreshold: 0.1,
     
@@ -927,4 +927,5 @@ window.carConfigurator = {
     setCameraView,
     resetCameraPosition,
     downloadScreenshot
+
 };
